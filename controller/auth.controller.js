@@ -20,11 +20,11 @@ const login = async (req, res) => {
             const senhaCript = bcrypt.hashCompare(senha, usuario.senha)
 
             if(!senhaCript){
-                res.status(401).json({message: 'Senha incorreta'})
+                return res.status(401).json({message: 'Senha incorreta'})
             }else{
                 const token = jwt.generateToken(payload)
 
-                res.status(200).json({message: 'Login realizado com sucesso!', token})
+                return res.status(200).json({message: 'Login realizado com sucesso!', token})
             }
         }
     }
@@ -37,10 +37,13 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     const valores = req.body
 
+    if(valores.cargo){
+        return res.status(403).json({message: 'Você não pode enviar um cargo na requisição!'})
+    }
+
     const senhaCript = hashGenerator(valores.senha)
 
     const valores2 = {
-        codUsuario: valores.codUsuario,
         nome: valores.nome,
         email: valores.email,
         senha: senhaCript,

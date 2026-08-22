@@ -25,6 +25,11 @@ const Usuario = db.define('usuarios', {
         allowNull: false,
         unique: true
     },
+    cargo:{
+        type: DataTypes.ENUM('ADMIN', 'CLIENTE'),
+        allowNull: false,
+        defaultValue: 'CLIENTE'
+    },
     cep:{
         type: DataTypes.STRING(8),
     },

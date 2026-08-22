@@ -5,6 +5,7 @@ const cors = require('cors')
 const db = require('./config/db')
 const PORT = process.env.SERVER_PORT
 const authRouter = require('./routes/auth')
+const produtoRouter = require('./routes/produtos')
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
@@ -16,6 +17,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/auth', authRouter)
+app.use('/produto', produtoRouter)
 
 // ============ Inicialização ============
 db.sync()
