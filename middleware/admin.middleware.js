@@ -1,20 +1,23 @@
-const jwtService = require('../services/jwt.service')
 const Usuario = require('../models/Usuario')
 
-const onlyAdmin = (req, res, next) => {
-    const idUsuario = req.user.codUsuario
-    
+const onlyAdmin = async (req, res, next) => {
+    const idUsuario = req.user?.sub || req.user?.id
+
+    if(!idUsuario){
+        return res.status(401).json({message: 'Usuario não autenticado!'})
+    }
+
     try {
-        const usuario = Usuario.findOne({where: {codUsuario: idUsuario}})
-        
-        if(usuario.cargo !== 'ADMIN'){
-            return res.status(403).json({message: "Você não tem permissão para fazer essa ação!"})
+        const usuario = await Usuario.findByPk(idUsuario)
+
+        if(!usuario || usuario.perfil !== 'ADMIN'){
+            return res.status(403).json({message: 'Voce nao tem permissao para fazer essa acao!'})
         }
 
         next()
     } catch (err) {
-        return res.status(403).json({ message: 'Token inválido ou expirado!' })
+        return res.status(500).json({message: 'Falha ao validar permissao de administrador!'})
     }
 }
 
-module.exports = {onlyAdmin}
+module.exports = { onlyAdmin }

@@ -2,33 +2,47 @@ const { DataTypes } = require('sequelize')
 const db = require('../config/db')
 
 const Produtos = db.define('produtos', {
-    codProduto:{
+    id:{
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
     },
-    nome:{
-        type: DataTypes.STRING(100),
-        allowNull: false
+    codigo:{
+        type: DataTypes.STRING(40),
+        allowNull: false,
+        unique: true
     },
-    categoria:{
-        type: DataTypes.STRING(50),
+    nome:{
+        type: DataTypes.STRING(150),
         allowNull: false
     },
     descricao:{
-        type: DataTypes.STRING(255),
+        type: DataTypes.TEXT,
         allowNull: false
     },
-    precoUnidade:{
+    preco:{
         type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
+        allowNull: false,
+        validate: {
+            min: 0
+        }
     },
     imagem_url:{
         type: DataTypes.STRING(500),
         allowNull: false
     },
-    porcentagemDesconto:{
+    ativo:{
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: true
+    },
+    categoria_id:{
         type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'categorias',
+            key: 'id'
+        }
     },
 },{
     timestamps: true,

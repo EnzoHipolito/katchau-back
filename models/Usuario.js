@@ -2,7 +2,7 @@ const { DataTypes } = require('sequelize')
 const db = require('../config/db')
 
 const Usuario = db.define('usuarios', {
-    codUsuario:{
+    id:{
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true
@@ -16,7 +16,7 @@ const Usuario = db.define('usuarios', {
         allowNull: false,
         unique: true
     },
-    senha:{
+    senha_hash:{
         type: DataTypes.STRING(255),
         allowNull: false
     },
@@ -25,7 +25,7 @@ const Usuario = db.define('usuarios', {
         allowNull: false,
         unique: true
     },
-    cargo:{
+    perfil:{
         type: DataTypes.ENUM('ADMIN', 'CLIENTE'),
         allowNull: false,
         defaultValue: 'CLIENTE'
@@ -47,6 +47,9 @@ const Usuario = db.define('usuarios', {
     },
     cidade:{
         type: DataTypes.STRING(30),
+    },
+    uf:{
+        type: DataTypes.STRING(2),
     }
 },{
     timestamps: true,

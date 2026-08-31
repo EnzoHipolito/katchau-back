@@ -3,9 +3,16 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const db = require('./config/db')
-const PORT = process.env.SERVER_PORT
+require('./models/index')
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
 const authRouter = require('./routes/auth')
+const authController = require('./controller/auth.controller')
 const produtoRouter = require('./routes/produtos')
+const categoriaRouter = require('./routes/categorias')
+const estoqueRouter = require('./routes/estoques')
+const pedidoRouter = require('./routes/pedidos')
+const itemPedidoRouter = require('./routes/itensPedido')
+const entregaRouter = require('./routes/entregas')
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
@@ -17,7 +24,14 @@ app.get('/', (req, res) => {
 })
 
 app.use('/auth', authRouter)
+app.post('/login', authController.login)
+app.post('/usuarios', authController.register)
 app.use('/produto', produtoRouter)
+app.use('/categoria', categoriaRouter)
+app.use('/estoque', estoqueRouter)
+app.use('/pedido', pedidoRouter)
+app.use('/item-pedido', itemPedidoRouter)
+app.use('/entrega', entregaRouter)
 
 // ============ Inicialização ============
 db.sync()

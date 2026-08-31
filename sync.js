@@ -1,4 +1,5 @@
 const db = require('./config/db')
+require('./models')
 
 async function syncDatabase(){
     try{
