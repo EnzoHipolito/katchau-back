@@ -1,12 +1,23 @@
-POST http://localhost:3000/auth/registrar
+POST http://localhost:3000/auth/register
 Content-Type: application/json
 
 {
     "nome": "Enzo",
     "email": "enzohipolito7@gmail.com",
     "senha": "123456",
-    "cpf": "13483766944",
-    "cargo": "ADMIN",
+    "cpf": "13483766944"
+}
+
+### Concluir pedido (requer token)
+POST http://localhost:3000/pedido/cadastrar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "itens": [
+        {"produto_id": 1, "quantidade": 2},
+        {"produto_id": 2, "quantidade": 1}
+    ]
 }
 
 ### Cadastrar produto com varias imagens (requer token ADMIN)

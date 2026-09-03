@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "db:sync": "node sync.js",
-    "check": "node --check server.js && node --check sync.js && node --check services/database.service.js && node --check controller/produtos.controller.js && node --check models/ProdutoImagem.js"
+    "check": "node --check server.js && node --check sync.js && node --check services/database.service.js && node --check services/checkout.service.js && node --check controller/produtos.controller.js && node --check controller/pedidos.controller.js && node --check models/ProdutoImagem.js"
   },
   "keywords": [],
   "author": "Enzo dos Santos Hipolito",

@@ -1,14 +1,29 @@
-const { Pedido } = require('../models')
+const { Pedido, ItemPedido, Entrega } = require('../models')
+const { CheckoutError, concluirPedido } = require('../services/checkout.service')
 
 const cadastrar = async (req, res) => {
     try{
-        const pedido = await Pedido.create(req.body)
+        const pedidoId = await concluirPedido({
+            usuarioId: req.user.sub,
+            itens: req.body.itens
+        })
 
-        res.status(201).json({message: 'Pedido cadastrado com sucesso!', pedido})
+        const pedido = await Pedido.findByPk(pedidoId, {
+            include: [
+                {model: ItemPedido, as: 'itens'},
+                {model: Entrega, as: 'entrega'}
+            ]
+        })
+
+        res.status(201).json({message: 'Pedido concluido com sucesso!', pedido})
     }
     catch(err){
+        if(err instanceof CheckoutError){
+            return res.status(err.status).json({message: err.message})
+        }
+
         console.error('Erro ao cadastrar pedido', err)
-        res.status(500).json({message: 'Falha ao cadastrar pedido.'})
+        res.status(500).json({message: 'Falha ao concluir pedido.'})
     }
 }
 
