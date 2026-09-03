@@ -27,10 +27,6 @@ const Produtos = db.define('produtos', {
             min: 0
         }
     },
-    imagem_url:{
-        type: DataTypes.STRING(500),
-        allowNull: false
-    },
     ativo:{
         type: DataTypes.BOOLEAN,
         allowNull: false,

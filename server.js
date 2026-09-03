@@ -2,8 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const app = express()
 const cors = require('cors')
-const db = require('./config/db')
-require('./models/index')
+const { sincronizarBanco } = require('./services/database.service')
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
 const authRouter = require('./routes/auth')
 const authController = require('./controller/auth.controller')
@@ -34,7 +33,7 @@ app.use('/item-pedido', itemPedidoRouter)
 app.use('/entrega', entregaRouter)
 
 // ============ Inicialização ============
-db.sync()
+sincronizarBanco()
 .then(() => {
     app.listen(PORT, () => {
         console.log('Servidor inicializado!')

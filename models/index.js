@@ -1,6 +1,7 @@
 const Usuario = require('./Usuario')
 const Categoria = require('./Categoria')
 const Produto = require('./Produto')
+const ProdutoImagem = require('./ProdutoImagem')
 const Estoque = require('./Estoque')
 const Pedido = require('./Pedido')
 const ItemPedido = require('./ItemPedido')
@@ -13,6 +14,16 @@ Categoria.hasMany(Produto, {
 Produto.belongsTo(Categoria, {
     foreignKey: 'categoria_id',
     as: 'categoria'
+})
+
+Produto.hasMany(ProdutoImagem, {
+    foreignKey: 'produto_id',
+    as: 'imagens',
+    onDelete: 'CASCADE'
+})
+ProdutoImagem.belongsTo(Produto, {
+    foreignKey: 'produto_id',
+    as: 'produto'
 })
 
 Produto.hasOne(Estoque, {
@@ -64,6 +75,7 @@ module.exports = {
     Usuario,
     Categoria,
     Produto,
+    ProdutoImagem,
     Estoque,
     Pedido,
     ItemPedido,

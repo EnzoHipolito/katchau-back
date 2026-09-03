@@ -8,3 +8,20 @@ Content-Type: application/json
     "cpf": "13483766944",
     "cargo": "ADMIN",
 }
+
+### Cadastrar produto com varias imagens (requer token ADMIN)
+POST http://localhost:3000/produto/cadastrar
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "codigo": "GPU-001",
+    "nome": "Placa de video",
+    "descricao": "Produto de exemplo com galeria de imagens",
+    "preco": 1999.90,
+    "categoria_id": 1,
+    "imagens": [
+        {"url": "https://example.com/gpu-frente.jpg", "ordem": 0},
+        {"url": "https://example.com/gpu-verso.jpg", "ordem": 1}
+    ]
+}
