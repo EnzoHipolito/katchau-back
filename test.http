@@ -8,7 +8,7 @@ Content-Type: application/json
     "cpf": "13483766944"
 }
 
-### Concluir pedido (requer token)
+### Criar checkout (requer token)
 POST http://localhost:3000/pedido/cadastrar
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -19,6 +19,14 @@ Content-Type: application/json
         {"produto_id": 2, "quantidade": 1}
     ]
 }
+
+### Confirmar pedido e baixar estoque (requer token ADMIN)
+PATCH http://localhost:3000/pedido/confirmar/1
+Authorization: Bearer {{token}}
+
+### Concluir pedido depois da entrega (requer token ADMIN)
+PATCH http://localhost:3000/pedido/concluir/1
+Authorization: Bearer {{token}}
 
 ### Cadastrar produto com varias imagens (requer token ADMIN)
 POST http://localhost:3000/produto/cadastrar

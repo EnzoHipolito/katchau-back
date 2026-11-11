@@ -1,169 +1,208 @@
-const { randomBytes } = require('crypto')
+const { randomUUID } = require('crypto')
+const { Op } = require('sequelize')
 const db = require('../config/db')
-const { Usuario, Produto, Estoque, Pedido, ItemPedido, Entrega } = require('../models')
+const { Pedido, ItemPedido, Produto, Estoque } = require('../models')
 
 class CheckoutError extends Error {
     constructor(message, status = 400){
         super(message)
-        this.name = 'CheckoutError'
         this.status = status
     }
 }
 
+const arredondarDinheiro = (valor) => Number(Number(valor).toFixed(2))
+
 const normalizarItens = (itens) => {
     if(!Array.isArray(itens) || itens.length === 0){
-        throw new CheckoutError('Informe ao menos um item para concluir o pedido.')
+        throw new CheckoutError('Informe ao menos um produto no campo itens.')
     }
 
-    const quantidadesPorProduto = new Map()
+    const itensAgrupados = new Map()
 
     for(const item of itens){
-        const produtoId = Number(item?.produto_id)
-        const quantidade = Number(item?.quantidade)
+        const produtoId = Number(item.produto_id)
+        const quantidade = Number(item.quantidade)
 
         if(!Number.isInteger(produtoId) || produtoId <= 0){
             throw new CheckoutError('Todos os itens precisam de um produto_id valido.')
         }
 
         if(!Number.isInteger(quantidade) || quantidade <= 0){
-            throw new CheckoutError(`A quantidade do produto ${produtoId} deve ser um inteiro maior que zero.`)
+            throw new CheckoutError('A quantidade de cada item deve ser um inteiro maior que zero.')
         }
 
-        quantidadesPorProduto.set(
-            produtoId,
-            (quantidadesPorProduto.get(produtoId) || 0) + quantidade
-        )
+        itensAgrupados.set(produtoId, (itensAgrupados.get(produtoId) || 0) + quantidade)
     }
 
-    return [...quantidadesPorProduto.entries()]
+    return [...itensAgrupados]
         .map(([produto_id, quantidade]) => ({produto_id, quantidade}))
         .sort((itemA, itemB) => itemA.produto_id - itemB.produto_id)
 }
 
-const montarEndereco = (usuario) => {
-    const camposObrigatorios = ['cep', 'rua', 'numero', 'bairro', 'cidade', 'uf']
-    const enderecoIncompleto = camposObrigatorios.some(campo => {
-        const valor = usuario[campo]
-        return valor === null || valor === undefined || String(valor).trim() === ''
-    })
-
-    if(enderecoIncompleto){
-        throw new CheckoutError('Complete o endereco do usuario antes de concluir o pedido.')
+const criarCheckout = async ({usuarioId, itens, desconto = 0}) => {
+    if(!usuarioId){
+        throw new CheckoutError('Usuario nao autenticado.', 401)
     }
 
-    const complemento = usuario.complemento ? `, ${usuario.complemento}` : ''
-    return `${usuario.rua}, ${usuario.numero}${complemento} - ${usuario.bairro}, ${usuario.cidade}/${usuario.uf} - CEP ${usuario.cep}`
-}
-
-const gerarCodigoPedido = () => `PED-${Date.now()}-${randomBytes(4).toString('hex')}`
-
-const concluirPedido = async ({usuarioId, itens}) => {
     const itensNormalizados = normalizarItens(itens)
+    const descontoNumerico = Number(desconto)
+
+    if(!Number.isFinite(descontoNumerico) || descontoNumerico < 0){
+        throw new CheckoutError('O desconto deve ser um valor maior ou igual a zero.')
+    }
 
     return db.transaction(async (transaction) => {
-        const usuario = await Usuario.findByPk(usuarioId, {transaction})
-        if(!usuario){
-            throw new CheckoutError('Usuario nao encontrado.', 404)
-        }
-
-        const enderecoCompleto = montarEndereco(usuario)
-        const produtoIds = itensNormalizados.map(item => item.produto_id)
-
-        const estoques = await Estoque.findAll({
-            where: {produto_id: produtoIds},
-            order: [['produto_id', 'ASC']],
-            transaction,
-            lock: transaction.LOCK.UPDATE
-        })
-
-        const estoquePorProduto = new Map(
-            estoques.map(estoque => [estoque.produto_id, estoque])
-        )
-
+        const idsProdutos = itensNormalizados.map(item => item.produto_id)
         const produtos = await Produto.findAll({
-            where: {id: produtoIds},
+            where: {
+                id: {[Op.in]: idsProdutos},
+                ativo: true
+            },
             transaction
         })
-        const produtoPorId = new Map(produtos.map(produto => [produto.id, produto]))
 
-        let subtotalCentavos = 0
-        const itensDoPedido = itensNormalizados.map(item => {
-            const produto = produtoPorId.get(item.produto_id)
-            const estoque = estoquePorProduto.get(item.produto_id)
+        if(produtos.length !== idsProdutos.length){
+            throw new CheckoutError('Um ou mais produtos nao existem ou estao inativos.', 404)
+        }
 
-            if(!produto){
-                throw new CheckoutError(`Produto ${item.produto_id} nao encontrado.`, 404)
-            }
+        const produtosPorId = new Map(produtos.map(produto => [produto.id, produto]))
+        const estoques = await Estoque.findAll({
+            where: {produto_id: {[Op.in]: idsProdutos}},
+            transaction
+        })
+        const estoquesPorProduto = new Map(estoques.map(estoque => [estoque.produto_id, estoque]))
 
-            if(!produto.ativo){
-                throw new CheckoutError(`O produto ${produto.nome} nao esta ativo.`, 409)
-            }
+        for(const item of itensNormalizados){
+            const estoque = estoquesPorProduto.get(item.produto_id)
 
             if(!estoque){
-                throw new CheckoutError(`O produto ${produto.nome} nao possui estoque cadastrado.`, 409)
+                throw new CheckoutError(`Nao existe estoque cadastrado para o produto ${item.produto_id}.`, 409)
             }
 
             if(estoque.quantidade < item.quantidade){
                 throw new CheckoutError(
-                    `Estoque insuficiente para ${produto.nome}. Disponivel: ${estoque.quantidade}.`,
+                    `Estoque insuficiente para o produto ${item.produto_id}. Disponivel: ${estoque.quantidade}.`,
+                    409
+                )
+            }
+        }
+
+        const itensDoPedido = itensNormalizados.map(item => {
+            const produto = produtosPorId.get(item.produto_id)
+            const precoUnitario = arredondarDinheiro(produto.preco)
+
+            return {
+                ...item,
+                preco_unitario: precoUnitario,
+                subtotal: arredondarDinheiro(precoUnitario * item.quantidade)
+            }
+        })
+
+        const subtotal = arredondarDinheiro(
+            itensDoPedido.reduce((total, item) => total + item.subtotal, 0)
+        )
+
+        if(descontoNumerico > subtotal){
+            throw new CheckoutError('O desconto nao pode ser maior que o subtotal do pedido.')
+        }
+
+        const pedido = await Pedido.create({
+            codigo: `PED-${randomUUID()}`,
+            usuario_id: usuarioId,
+            status: 'PENDENTE',
+            subtotal,
+            desconto: arredondarDinheiro(descontoNumerico),
+            total: arredondarDinheiro(subtotal - descontoNumerico)
+        }, {transaction})
+
+        await ItemPedido.bulkCreate(
+            itensDoPedido.map(item => ({...item, pedido_id: pedido.id})),
+            {transaction}
+        )
+
+        return Pedido.findByPk(pedido.id, {
+            include: [{model: ItemPedido, as: 'itens'}],
+            transaction
+        })
+    })
+}
+
+const confirmarPedido = async (pedidoId) => {
+    return db.transaction(async (transaction) => {
+        const pedido = await Pedido.findByPk(pedidoId, {
+            include: [{model: ItemPedido, as: 'itens'}],
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        })
+
+        if(!pedido){
+            throw new CheckoutError('Pedido nao encontrado.', 404)
+        }
+
+        if(pedido.status === 'CONFIRMADO'){
+            throw new CheckoutError('Este pedido ja foi confirmado e o estoque ja foi descontado.', 409)
+        }
+
+        if(pedido.status !== 'PENDENTE'){
+            throw new CheckoutError(`Um pedido ${pedido.status} nao pode ser confirmado.`, 409)
+        }
+
+        if(!pedido.itens || pedido.itens.length === 0){
+            throw new CheckoutError('O pedido nao possui itens.', 409)
+        }
+
+        const itensOrdenados = [...pedido.itens].sort((itemA, itemB) => itemA.produto_id - itemB.produto_id)
+
+        for(const item of itensOrdenados){
+            const estoque = await Estoque.findOne({
+                where: {produto_id: item.produto_id},
+                transaction,
+                lock: transaction.LOCK.UPDATE
+            })
+
+            if(!estoque){
+                throw new CheckoutError(`Nao existe estoque cadastrado para o produto ${item.produto_id}.`, 409)
+            }
+
+            if(estoque.quantidade < item.quantidade){
+                throw new CheckoutError(
+                    `Estoque insuficiente para o produto ${item.produto_id}. Disponivel: ${estoque.quantidade}.`,
                     409
                 )
             }
 
-            const precoCentavos = Math.round(Number(produto.preco) * 100)
-            if(!Number.isSafeInteger(precoCentavos) || precoCentavos < 0){
-                throw new CheckoutError(`O produto ${produto.nome} possui um preco invalido.`, 409)
-            }
-
-            const itemSubtotalCentavos = precoCentavos * item.quantidade
-            subtotalCentavos += itemSubtotalCentavos
-
-            return {
-                produto_id: produto.id,
-                quantidade: item.quantidade,
-                preco_unitario: (precoCentavos / 100).toFixed(2),
-                subtotal: (itemSubtotalCentavos / 100).toFixed(2),
-                estoque
-            }
-        })
-
-        const subtotal = (subtotalCentavos / 100).toFixed(2)
-        const pedido = await Pedido.create({
-            codigo: gerarCodigoPedido(),
-            usuario_id: usuario.id,
-            status: 'CONFIRMADO',
-            subtotal,
-            desconto: '0.00',
-            total: subtotal,
-            data_pedido: new Date()
-        }, {transaction})
-
-        await ItemPedido.bulkCreate(
-            itensDoPedido.map(item => ({
-                pedido_id: pedido.id,
-                produto_id: item.produto_id,
-                quantidade: item.quantidade,
-                preco_unitario: item.preco_unitario,
-                subtotal: item.subtotal
-            })),
-            {transaction}
-        )
-
-        const movimentadoEm = new Date()
-        for(const item of itensDoPedido){
-            item.estoque.quantidade -= item.quantidade
-            item.estoque.ultima_movimentacao = movimentadoEm
-            await item.estoque.save({transaction})
+            estoque.quantidade -= item.quantidade
+            estoque.ultima_movimentacao = new Date()
+            await estoque.save({transaction})
         }
 
-        await Entrega.create({
-            pedido_id: pedido.id,
-            status: 'PREPARANDO',
-            endereco_completo: enderecoCompleto
-        }, {transaction})
+        pedido.status = 'CONFIRMADO'
+        await pedido.save({transaction})
 
-        return pedido.id
+        return pedido
     })
 }
 
-module.exports = { CheckoutError, concluirPedido, normalizarItens }
+const concluirPedido = async (pedidoId) => {
+    return db.transaction(async (transaction) => {
+        const pedido = await Pedido.findByPk(pedidoId, {
+            transaction,
+            lock: transaction.LOCK.UPDATE
+        })
+
+        if(!pedido){
+            throw new CheckoutError('Pedido nao encontrado.', 404)
+        }
+
+        if(pedido.status !== 'CONFIRMADO'){
+            throw new CheckoutError('Somente pedidos confirmados podem ser concluidos.', 409)
+        }
+
+        pedido.status = 'CONCLUIDO'
+        await pedido.save({transaction})
+
+        return pedido
+    })
+}
+
+module.exports = { CheckoutError, criarCheckout, confirmarPedido, concluirPedido }

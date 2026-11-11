@@ -29,27 +29,6 @@ const Usuario = db.define('usuarios', {
         type: DataTypes.ENUM('ADMIN', 'CLIENTE'),
         allowNull: false,
         defaultValue: 'CLIENTE'
-    },
-    cep:{
-        type: DataTypes.STRING(8),
-    },
-    rua:{
-        type: DataTypes.STRING(70),
-    },
-    numero:{
-        type: DataTypes.INTEGER,
-    },
-    complemento:{
-        type: DataTypes.STRING(30),
-    },
-    bairro:{
-        type: DataTypes.STRING(30),
-    },
-    cidade:{
-        type: DataTypes.STRING(30),
-    },
-    uf:{
-        type: DataTypes.STRING(2),
     }
 },{
     timestamps: true,

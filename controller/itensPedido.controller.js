@@ -1,6 +1,10 @@
 const { ItemPedido } = require('../models')
 
 const cadastrar = async (req, res) => {
+    if(!req.body.pedido_id || !req.body.produto_id || !req.body.quantidade || req.body.preco_unitario === undefined || req.body.subtotal === undefined){
+        return res.status(400).json({message: 'Preencha todos os campos obrigatorios do item do pedido.'})
+    }
+
     try{
         const itemPedido = await ItemPedido.create(req.body)
 

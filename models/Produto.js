@@ -38,7 +38,9 @@ const Produtos = db.define('produtos', {
         references: {
             model: 'categorias',
             key: 'id'
-        }
+        },
+        onDelete: 'RESTRICT',
+        onUpdate: 'CASCADE'
     },
 },{
     timestamps: true,

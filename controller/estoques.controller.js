@@ -1,6 +1,10 @@
 const { Estoque } = require('../models')
 
 const cadastrar = async (req, res) => {
+    if(!req.body.produto_id){
+        return res.status(400).json({message: 'Preencha o campo obrigatorio: produto_id.'})
+    }
+
     try{
         const estoque = await Estoque.create(req.body)
 

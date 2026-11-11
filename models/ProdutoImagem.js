@@ -13,7 +13,9 @@ const ProdutoImagem = db.define('produto_imagens', {
         references: {
             model: 'produtos',
             key: 'id'
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     },
     url: {
         type: DataTypes.STRING(500),

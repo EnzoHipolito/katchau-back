@@ -1,9 +1,8 @@
 const db = require('./config/db')
-const { sincronizarBanco } = require('./services/database.service')
 
 async function syncDatabase(){
     try{
-        await sincronizarBanco()
+        await db.sync()
         return console.log('Banco de dados sincronizado!')
     }
     catch(err){

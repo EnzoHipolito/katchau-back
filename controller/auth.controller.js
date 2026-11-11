@@ -19,7 +19,7 @@ const login = async (req, res) => {
         }
 
         const payload = {
-            sub: usuario.id,
+            id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
             perfil: usuario.perfil
@@ -36,6 +36,10 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
     const valores = req.body
+
+    if(!valores.nome || !valores.email || !valores.senha || !valores.cpf){
+        return res.status(400).json({message: 'Preencha todos os campos obrigatorios: nome, email, senha e cpf.'})
+    }
 
     if(valores.cargo || valores.perfil){
         return res.status(403).json({message: 'Voce nao pode enviar um perfil na requisicao!'})

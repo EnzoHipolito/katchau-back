@@ -13,7 +13,9 @@ const ItemPedido = db.define('itens_pedido', {
         references: {
             model: 'pedidos',
             key: 'id'
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     },
     produto_id: {
         type: DataTypes.INTEGER,
@@ -21,7 +23,9 @@ const ItemPedido = db.define('itens_pedido', {
         references: {
             model: 'produtos',
             key: 'id'
-        }
+        },
+        onDelete: 'RESTRICT',
+        onUpdate: 'CASCADE'
     },
     quantidade: {
         type: DataTypes.INTEGER,

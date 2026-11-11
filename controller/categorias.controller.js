@@ -1,6 +1,10 @@
 const { Categoria } = require('../models')
 
 const cadastrar = async (req, res) => {
+    if(!req.body.nome){
+        return res.status(400).json({message: 'Preencha o campo obrigatorio: nome.'})
+    }
+
     try{
         const categoria = await Categoria.create(req.body)
 

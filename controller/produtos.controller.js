@@ -54,6 +54,10 @@ const normalizarImagens = (imagens) => {
 const cadastrar = async (req, res) => {
     const { imagens, imagem_url, ...valores } = req.body
 
+    if(!valores.codigo || !valores.nome || !valores.descricao || valores.preco === undefined || !valores.categoria_id){
+        return res.status(400).json({message: 'Preencha todos os campos obrigatorios do produto.'})
+    }
+
     if(imagem_url !== undefined){
         return res.status(400).json({message: 'Use o campo imagens como array; imagem_url nao pertence mais ao produto.'})
     }

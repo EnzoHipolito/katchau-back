@@ -14,7 +14,9 @@ const Entrega = db.define('entregas', {
         references: {
             model: 'pedidos',
             key: 'id'
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     },
     status: {
         type: DataTypes.ENUM('PREPARANDO', 'ENVIADO', 'EM_TRANSITO', 'ENTREGUE', 'CANCELADO'),

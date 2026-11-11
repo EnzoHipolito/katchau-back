@@ -18,7 +18,9 @@ const Pedido = db.define('pedidos', {
         references: {
             model: 'usuarios',
             key: 'id'
-        }
+        },
+        onDelete: 'RESTRICT',
+        onUpdate: 'CASCADE'
     },
     status: {
         type: DataTypes.ENUM('PENDENTE', 'CONFIRMADO', 'CANCELADO', 'CONCLUIDO'),

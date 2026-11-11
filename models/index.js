@@ -1,4 +1,5 @@
 const Usuario = require('./Usuario')
+const Endereco = require('./Endereco')
 const Categoria = require('./Categoria')
 const Produto = require('./Produto')
 const ProdutoImagem = require('./ProdutoImagem')
@@ -7,72 +8,165 @@ const Pedido = require('./Pedido')
 const ItemPedido = require('./ItemPedido')
 const Entrega = require('./Entrega')
 
+Usuario.hasMany(Endereco, {
+    foreignKey: {
+        name: 'idUsuario',
+        allowNull: false
+    },
+    as: 'enderecos',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+Endereco.belongsTo(Usuario, {
+    foreignKey: {
+        name: 'idUsuario',
+        allowNull: false
+    },
+    as: 'usuario',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+
 Categoria.hasMany(Produto, {
-    foreignKey: 'categoria_id',
-    as: 'produtos'
+    foreignKey: {
+        name: 'categoria_id',
+        allowNull: false
+    },
+    as: 'produtos',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 Produto.belongsTo(Categoria, {
-    foreignKey: 'categoria_id',
-    as: 'categoria'
+    foreignKey: {
+        name: 'categoria_id',
+        allowNull: false
+    },
+    as: 'categoria',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 
 Produto.hasMany(ProdutoImagem, {
-    foreignKey: 'produto_id',
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false
+    },
     as: 'imagens',
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 ProdutoImagem.belongsTo(Produto, {
-    foreignKey: 'produto_id',
-    as: 'produto'
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false
+    },
+    as: 'produto',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 
 Produto.hasOne(Estoque, {
-    foreignKey: 'produto_id',
-    as: 'estoque'
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false,
+        unique: true
+    },
+    as: 'estoque',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 Estoque.belongsTo(Produto, {
-    foreignKey: 'produto_id',
-    as: 'produto'
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false,
+        unique: true
+    },
+    as: 'produto',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 
 Usuario.hasMany(Pedido, {
-    foreignKey: 'usuario_id',
-    as: 'pedidos'
+    foreignKey: {
+        name: 'usuario_id',
+        allowNull: false
+    },
+    as: 'pedidos',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 Pedido.belongsTo(Usuario, {
-    foreignKey: 'usuario_id',
-    as: 'usuario'
+    foreignKey: {
+        name: 'usuario_id',
+        allowNull: false
+    },
+    as: 'usuario',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 
 Pedido.hasMany(ItemPedido, {
-    foreignKey: 'pedido_id',
-    as: 'itens'
+    foreignKey: {
+        name: 'pedido_id',
+        allowNull: false
+    },
+    as: 'itens',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 ItemPedido.belongsTo(Pedido, {
-    foreignKey: 'pedido_id',
-    as: 'pedido'
+    foreignKey: {
+        name: 'pedido_id',
+        allowNull: false
+    },
+    as: 'pedido',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 
 Produto.hasMany(ItemPedido, {
-    foreignKey: 'produto_id',
-    as: 'itensPedido'
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false
+    },
+    as: 'itensPedido',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 ItemPedido.belongsTo(Produto, {
-    foreignKey: 'produto_id',
-    as: 'produto'
+    foreignKey: {
+        name: 'produto_id',
+        allowNull: false
+    },
+    as: 'produto',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
 })
 
 Pedido.hasOne(Entrega, {
-    foreignKey: 'pedido_id',
-    as: 'entrega'
+    foreignKey: {
+        name: 'pedido_id',
+        allowNull: false,
+        unique: true
+    },
+    as: 'entrega',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 Entrega.belongsTo(Pedido, {
-    foreignKey: 'pedido_id',
-    as: 'pedido'
+    foreignKey: {
+        name: 'pedido_id',
+        allowNull: false,
+        unique: true
+    },
+    as: 'pedido',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
 })
 
 module.exports = {
     Usuario,
+    Endereco,
     Categoria,
     Produto,
     ProdutoImagem,

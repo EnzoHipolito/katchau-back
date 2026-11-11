@@ -1,6 +1,10 @@
 const { Entrega } = require('../models')
 
 const cadastrar = async (req, res) => {
+    if(!req.body.pedido_id || !req.body.endereco_completo){
+        return res.status(400).json({message: 'Preencha todos os campos obrigatorios da entrega.'})
+    }
+
     try{
         const entrega = await Entrega.create(req.body)
 

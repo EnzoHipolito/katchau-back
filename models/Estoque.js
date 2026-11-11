@@ -14,7 +14,9 @@ const Estoque = db.define('estoques', {
         references: {
             model: 'produtos',
             key: 'id'
-        }
+        },
+        onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
     },
     quantidade: {
         type: DataTypes.INTEGER,
