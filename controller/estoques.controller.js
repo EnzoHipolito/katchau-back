@@ -6,7 +6,8 @@ const cadastrar = async (req, res) => {
     }
 
     try{
-        const estoque = await Estoque.create(req.body)
+        const {produto_id, quantidade, quantidade_minima} = req.body
+        const estoque = await Estoque.create({produto_id, quantidade, quantidade_minima})
 
         res.status(201).json({message: 'Estoque cadastrado com sucesso!', estoque})
     }
@@ -46,26 +47,6 @@ const consultar = async (req, res) => {
     }
 }
 
-const apagar = async (req, res) => {
-    const id = req.params.id
-
-    try{
-        const estoque = await Estoque.findByPk(id)
-
-        if(!estoque){
-            return res.status(404).json({message: `O Estoque com id ${id} nao existe!`})
-        }
-
-        await Estoque.destroy({where: {id}})
-
-        res.status(200).json({message: `Estoque com id ${id} foi apagado com sucesso!`})
-    }
-    catch(err){
-        console.error('Erro ao apagar estoque', err)
-        res.status(500).json({message: 'Falha ao apagar estoque.'})
-    }
-}
-
 const atualizar = async (req, res) => {
     const id = req.params.id
 
@@ -76,7 +57,12 @@ const atualizar = async (req, res) => {
             return res.status(404).json({message: `O Estoque com id ${id} nao existe!`})
         }
 
-        await Estoque.update(req.body, {where: {id}})
+        const {quantidade, quantidade_minima} = req.body
+        if(quantidade === undefined && quantidade_minima === undefined){
+            return res.status(400).json({message: 'Informe quantidade ou quantidade_minima.'})
+        }
+        await estoque.update({quantidade, quantidade_minima,
+            ...(quantidade !== undefined ? {ultima_movimentacao: new Date()} : {})})
 
         res.status(200).json({message: `Estoque com id ${id} foi atualizado com sucesso!`})
     }
@@ -90,4 +76,4 @@ const atualizarParcial = async (req, res) => {
     await atualizar(req, res)
 }
 
-module.exports = { cadastrar, listar, consultar, apagar, atualizar, atualizarParcial }
+module.exports = { cadastrar, listar, consultar, atualizar, atualizarParcial }

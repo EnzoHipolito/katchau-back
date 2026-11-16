@@ -31,7 +31,7 @@ const Endereco = db.define('enderecos', {
     },
     complemento:{
         type: DataTypes.STRING(30),
-        allowNull: false
+        allowNull: true
     },
     bairro:{
         type: DataTypes.STRING(30),

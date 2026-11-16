@@ -1,6 +1,7 @@
 const Usuario = require('./Usuario')
 const Endereco = require('./Endereco')
 const Categoria = require('./Categoria')
+const Cupom = require('./Cupom')
 const Produto = require('./Produto')
 const ProdutoImagem = require('./ProdutoImagem')
 const Estoque = require('./Estoque')
@@ -42,6 +43,19 @@ Produto.belongsTo(Categoria, {
         allowNull: false
     },
     as: 'categoria',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+})
+
+Cupom.hasMany(Pedido, {
+    foreignKey: {name: 'cupom_id', allowNull: true},
+    as: 'pedidos',
+    onDelete: 'RESTRICT',
+    onUpdate: 'CASCADE'
+})
+Pedido.belongsTo(Cupom, {
+    foreignKey: {name: 'cupom_id', allowNull: true},
+    as: 'cupom',
     onDelete: 'RESTRICT',
     onUpdate: 'CASCADE'
 })
@@ -168,6 +182,7 @@ module.exports = {
     Usuario,
     Endereco,
     Categoria,
+    Cupom,
     Produto,
     ProdutoImagem,
     Estoque,

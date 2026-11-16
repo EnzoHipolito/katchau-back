@@ -5,8 +5,12 @@ const bcrypt = require('../services/bcrypt.service')
 const login = async (req, res) => {
     const {email, senha} = req.body
 
+    if(typeof email !== 'string' || !email.trim() || typeof senha !== 'string' || !senha){
+        return res.status(400).json({message: 'Informe email e senha.'})
+    }
+
     try{
-        const usuario = await Usuario.findOne({where: {email}})
+        const usuario = await Usuario.findOne({where: {email: email.trim().toLowerCase()}})
 
         if(!usuario){
             return res.status(404).json({message: 'Esse usuario nao existe!'})
@@ -37,8 +41,11 @@ const login = async (req, res) => {
 const register = async (req, res) => {
     const valores = req.body
 
-    if(!valores.nome || !valores.email || !valores.senha || !valores.cpf){
-        return res.status(400).json({message: 'Preencha todos os campos obrigatorios: nome, email, senha e cpf.'})
+    if(typeof valores.nome !== 'string' || !valores.nome.trim() ||
+        typeof valores.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valores.email) ||
+        typeof valores.senha !== 'string' || valores.senha.length < 8 ||
+        typeof valores.cpf !== 'string' || !/^\d{11}$/.test(valores.cpf)){
+        return res.status(400).json({message: 'Informe nome, email valido, senha com ao menos 8 caracteres e CPF com 11 digitos.'})
     }
 
     if(valores.cargo || valores.perfil){
@@ -48,8 +55,8 @@ const register = async (req, res) => {
     const senhaCript = bcrypt.hashGenerator(valores.senha)
 
     const valores2 = {
-        nome: valores.nome,
-        email: valores.email,
+        nome: valores.nome.trim(),
+        email: valores.email.trim().toLowerCase(),
         senha_hash: senhaCript,
         cpf: valores.cpf
     }
@@ -59,6 +66,9 @@ const register = async (req, res) => {
 
         res.status(201).json({message: 'Usuario registrado com sucesso!'})
     }catch(err){
+        if(err.name === 'SequelizeUniqueConstraintError'){
+            return res.status(409).json({message: 'Email ou CPF ja cadastrado.'})
+        }
         res.status(500).json({message: 'Falha ao registrar usuario.'})
         console.error('Erro ao registrar usuario', err)
     }

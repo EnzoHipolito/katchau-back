@@ -6,7 +6,8 @@ const cadastrar = async (req, res) => {
     }
 
     try{
-        const categoria = await Categoria.create(req.body)
+        const {nome, descricao, ativo} = req.body
+        const categoria = await Categoria.create({nome, descricao, ativo})
 
         res.status(201).json({message: 'Categoria cadastrada com sucesso!', categoria})
     }
@@ -18,7 +19,7 @@ const cadastrar = async (req, res) => {
 
 const listar = async (req, res) => {
     try{
-        const categorias = await Categoria.findAll()
+        const categorias = await Categoria.findAll({where: {ativo: true}})
 
         res.status(200).json({categorias})
     }
@@ -34,7 +35,7 @@ const consultar = async (req, res) => {
     try{
         const categoria = await Categoria.findByPk(id)
 
-        if(!categoria){
+        if(!categoria || !categoria.ativo){
             return res.status(404).json({message: `A Categoria com id ${id} nao existe!`})
         }
 
@@ -56,9 +57,9 @@ const apagar = async (req, res) => {
             return res.status(404).json({message: `A Categoria com id ${id} nao existe!`})
         }
 
-        await Categoria.destroy({where: {id}})
+        await Categoria.update({ativo: false}, {where: {id}})
 
-        res.status(200).json({message: `Categoria com id ${id} foi apagada com sucesso!`})
+        res.status(200).json({message: `Categoria com id ${id} foi desativada com sucesso!`})
     }
     catch(err){
         console.error('Erro ao apagar categoria', err)
@@ -76,7 +77,14 @@ const atualizar = async (req, res) => {
             return res.status(404).json({message: `A Categoria com id ${id} nao existe!`})
         }
 
-        await Categoria.update(req.body, {where: {id}})
+        const valores = {}
+        for(const campo of ['nome', 'descricao', 'ativo']){
+            if(req.body[campo] !== undefined) valores[campo] = req.body[campo]
+        }
+        if(Object.keys(valores).length === 0){
+            return res.status(400).json({message: 'Informe nome, descricao ou ativo.'})
+        }
+        await Categoria.update(valores, {where: {id}})
 
         res.status(200).json({message: `Categoria com id ${id} foi atualizada com sucesso!`})
     }

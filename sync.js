@@ -1,13 +1,14 @@
 const db = require('./config/db')
+require('./models')
 
 async function syncDatabase(){
     try{
-        await db.sync()
-        return console.log('Banco de dados sincronizado!')
+        await db.sync({force: true})
+        return console.log('Tabelas recriadas e dados anteriores apagados!')
     }
     catch(err){
         console.error('Falha ao sincronizar banco de dados!', err)
-        process.exitCode = 1
+
     }
     finally{
         await db.close()

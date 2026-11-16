@@ -7,7 +7,6 @@ const adminMiddleware = require('../middleware/admin.middleware')
 router.post('/cadastrar', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.cadastrar)
 router.get('/listar', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.listar)
 router.get('/consultar/:id', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.consultar)
-router.delete('/apagar/:id', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.apagar)
 router.put('/atualizar/:id', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.atualizar)
 router.patch('/atualizar-parcial/:id', authMiddleware, adminMiddleware.onlyAdmin, estoquesController.atualizarParcial)
 

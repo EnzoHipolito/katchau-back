@@ -1,7 +1,7 @@
 const { Endereco } = require('../models')
 
 const cadastrar = async (req, res) => {
-    if(!req.body.cep || !req.body.rua || !req.body.numero || !req.body.complemento || !req.body.bairro || !req.body.cidade || !req.body.uf){
+    if(!req.body.cep || !req.body.rua || req.body.numero === undefined || !req.body.bairro || !req.body.cidade || !req.body.uf){
         return res.status(400).json({message: 'Preencha todos os campos obrigatorios do endereco.'})
     }
 
@@ -11,7 +11,7 @@ const cadastrar = async (req, res) => {
             cep: req.body.cep,
             rua: req.body.rua,
             numero: req.body.numero,
-            complemento: req.body.complemento,
+            complemento: req.body.complemento || null,
             bairro: req.body.bairro,
             cidade: req.body.cidade,
             uf: req.body.uf
@@ -71,13 +71,11 @@ const atualizar = async (req, res) => {
             return res.status(404).json({message: 'Endereco nao encontrado.'})
         }
 
-        endereco.cep = req.body.cep || endereco.cep
-        endereco.rua = req.body.rua || endereco.rua
-        endereco.numero = req.body.numero || endereco.numero
-        endereco.complemento = req.body.complemento || endereco.complemento
-        endereco.bairro = req.body.bairro || endereco.bairro
-        endereco.cidade = req.body.cidade || endereco.cidade
-        endereco.uf = req.body.uf || endereco.uf
+        for(const campo of ['cep', 'rua', 'numero', 'complemento', 'bairro', 'cidade', 'uf']){
+            if(req.body[campo] !== undefined){
+                endereco[campo] = req.body[campo]
+            }
+        }
 
         await endereco.save()
 

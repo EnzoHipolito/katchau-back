@@ -2,7 +2,7 @@ const db = require('../config/db')
 const { Produto, ProdutoImagem, Categoria, Estoque } = require('../models')
 
 const includeProduto = [
-    {model: Categoria, as: 'categoria'},
+    {model: Categoria, as: 'categoria', where: {ativo: true}, required: true},
     {model: Estoque, as: 'estoque'},
     {
         model: ProdutoImagem,
@@ -52,9 +52,10 @@ const normalizarImagens = (imagens) => {
 }
 
 const cadastrar = async (req, res) => {
-    const { imagens, imagem_url, ...valores } = req.body
+    const { imagens, imagem_url, codigo, nome, descricao, preco, categoria_id, ativo } = req.body
+    const dadosProduto = {codigo, nome, descricao, preco, categoria_id, ativo}
 
-    if(!valores.codigo || !valores.nome || !valores.descricao || valores.preco === undefined || !valores.categoria_id){
+    if(!dadosProduto.codigo || !dadosProduto.nome || !dadosProduto.descricao || dadosProduto.preco === undefined || !dadosProduto.categoria_id){
         return res.status(400).json({message: 'Preencha todos os campos obrigatorios do produto.'})
     }
 
@@ -71,8 +72,12 @@ const cadastrar = async (req, res) => {
     }
 
     try{
+        const categoria = await Categoria.findByPk(dadosProduto.categoria_id)
+        if(!categoria || !categoria.ativo){
+            return res.status(400).json({message: 'Categoria inexistente ou inativa.'})
+        }
         await db.transaction(async (transaction) => {
-            const produto = await Produto.create(valores, {transaction})
+            const produto = await Produto.create(dadosProduto, {transaction})
             await ProdutoImagem.bulkCreate(
                 imagensNormalizadas.map(imagem => ({...imagem, produto_id: produto.id})),
                 {transaction}
@@ -110,7 +115,7 @@ const consultar = async (req, res) => {
             include: includeProduto
         })
 
-        if(!produto){
+        if(!produto || !produto.ativo || !produto.categoria?.ativo){
             return res.status(404).json({message: `O Produto com id ${id} nao existe!`})
         }
 
@@ -145,6 +150,10 @@ const apagar = async (req, res) => {
 const atualizar = async (req, res) => {
     const id = req.params.id
     const { imagens, imagem_url, ...valores } = req.body
+    const dadosProduto = {}
+    for(const campo of ['codigo', 'nome', 'descricao', 'preco', 'categoria_id', 'ativo']){
+        if(valores[campo] !== undefined) dadosProduto[campo] = valores[campo]
+    }
 
     if(imagem_url !== undefined){
         return res.status(400).json({message: 'Use o campo imagens como array; imagem_url nao pertence mais ao produto.'})
@@ -167,8 +176,20 @@ const atualizar = async (req, res) => {
             return res.status(404).json({message: `O Produto com id ${id} nao existe!`})
         }
 
+        if(dadosProduto.categoria_id !== undefined){
+            const categoria = await Categoria.findByPk(dadosProduto.categoria_id)
+            if(!categoria || !categoria.ativo){
+                return res.status(400).json({message: 'Categoria inexistente ou inativa.'})
+            }
+        }
+        if(Object.keys(dadosProduto).length === 0 && imagensNormalizadas === undefined){
+            return res.status(400).json({message: 'Informe dados ou imagens para atualizar.'})
+        }
+
         await db.transaction(async (transaction) => {
-            await Produto.update(valores, {where: {id}, transaction})
+            if(Object.keys(dadosProduto).length > 0){
+                await Produto.update(dadosProduto, {where: {id}, transaction})
+            }
 
             if(imagensNormalizadas){
                 await ProdutoImagem.destroy({where: {produto_id: id}, transaction})

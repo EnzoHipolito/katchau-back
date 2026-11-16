@@ -1,4 +1,4 @@
-const { Pedido } = require('../models')
+const { Pedido, ItemPedido, Entrega } = require('../models')
 const checkoutService = require('../services/checkout.service')
 
 const responderErroCheckout = (res, err) => {
@@ -11,11 +11,15 @@ const responderErroCheckout = (res, err) => {
 }
 
 const cadastrar = async (req, res) => {
+    if(req.body.desconto !== undefined || req.body.total !== undefined || req.body.subtotal !== undefined){
+        return res.status(400).json({message: 'Valores do pedido sao calculados pelo servidor. Envie cupom_codigo para usar um cupom.'})
+    }
     try{
         const pedido = await checkoutService.criarCheckout({
             usuarioId: req.user.id || req.user.sub,
             itens: req.body.itens,
-            desconto: req.body.desconto
+            cupomCodigo: req.body.cupom_codigo,
+            enderecoId: req.body.endereco_id
         })
 
         res.status(201).json({message: 'Checkout criado com sucesso!', pedido})
@@ -47,9 +51,22 @@ const concluir = async (req, res) => {
     }
 }
 
+const cancelar = async (req, res) => {
+    try{
+        const pedido = await checkoutService.cancelarPedido(
+            req.params.id,
+            req.user.id,
+            req.user.perfil === 'ADMIN'
+        )
+        return res.status(200).json({message: 'Pedido cancelado com sucesso!', pedido})
+    }catch(err){
+        return responderErroCheckout(res, err)
+    }
+}
+
 const listar = async (req, res) => {
     try{
-        const pedidos = await Pedido.findAll()
+        const pedidos = await Pedido.findAll({include: [{model: ItemPedido, as: 'itens'}, {model: Entrega, as: 'entrega'}]})
 
         res.status(200).json({pedidos})
     }
@@ -59,20 +76,36 @@ const listar = async (req, res) => {
     }
 }
 
+const meusPedidos = async (req, res) => {
+    try{
+        const pedidos = await Pedido.findAll({
+            where: {usuario_id: req.user.id || req.user.sub},
+            include: [{model: ItemPedido, as: 'itens'}, {model: Entrega, as: 'entrega'}],
+            order: [['data_pedido', 'DESC']]
+        })
+        return res.status(200).json({pedidos})
+    }catch(err){
+        console.error('Erro ao listar pedidos do usuario', err)
+        return res.status(500).json({message: 'Falha ao listar pedidos.'})
+    }
+}
+
 const consultar = async (req, res) => {
     const id = req.params.id
-    const userId = req.user.id
+    const userId = req.user.id || req.user.sub
 
     try{
         
-        const pedido = await Pedido.findByPk(id)
+        const pedido = await Pedido.findByPk(id, {
+            include: [{model: ItemPedido, as: 'itens'}, {model: Entrega, as: 'entrega'}]
+        })
 
         
         if(!pedido){
             return res.status(404).json({message: `O Pedido com id ${id} nao existe!`})
         }
         
-        if(userId !== pedido.usuario_id){
+        if(userId !== pedido.usuario_id && req.user.perfil !== 'ADMIN'){
             return res.status(403).json({message: "Você não pode consultar pedidos dessa conta!"})
         }
 
@@ -84,52 +117,4 @@ const consultar = async (req, res) => {
     }
 }
 
-const apagar = async (req, res) => {
-    const id = req.params.id
-
-    try{
-        const pedido = await Pedido.findByPk(id)
-
-        if(!pedido){
-            return res.status(404).json({message: `O Pedido com id ${id} nao existe!`})
-        }
-
-        await Pedido.destroy({where: {id}})
-
-        res.status(200).json({message: `Pedido com id ${id} foi apagado com sucesso!`})
-    }
-    catch(err){
-        console.error('Erro ao apagar pedido', err)
-        res.status(500).json({message: 'Falha ao apagar pedido.'})
-    }
-}
-
-const atualizar = async (req, res) => {
-    const id = req.params.id
-
-    if(req.body.status !== undefined){
-        return res.status(400).json({message: 'Use as rotas /confirmar ou /concluir para alterar o status do pedido.'})
-    }
-
-    try{
-        const pedido = await Pedido.findByPk(id)
-
-        if(!pedido){
-            return res.status(404).json({message: `O Pedido com id ${id} nao existe!`})
-        }
-
-        await Pedido.update(req.body, {where: {id}})
-
-        res.status(200).json({message: `Pedido com id ${id} foi atualizado com sucesso!`})
-    }
-    catch(err){
-        console.error('Erro ao atualizar pedido', err)
-        res.status(500).json({message: 'Falha ao atualizar pedido.'})
-    }
-}
-
-const atualizarParcial = async (req, res) => {
-    await atualizar(req, res)
-}
-
-module.exports = { cadastrar, confirmar, concluir, listar, consultar, apagar, atualizar, atualizarParcial }
+module.exports = { cadastrar, confirmar, concluir, cancelar, listar, meusPedidos, consultar }

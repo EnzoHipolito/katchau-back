@@ -3,6 +3,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 const db = require('./config/db')
+require('./models')
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
 
 const authRouter = require('./routes/auth')
@@ -13,6 +14,7 @@ const pedidoRouter = require('./routes/pedidos')
 const itemPedidoRouter = require('./routes/itensPedido')
 const entregaRouter = require('./routes/entregas')
 const enderecoRouter = require('./routes/enderecos')
+const cupomRouter = require('./routes/cupons')
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
@@ -31,6 +33,7 @@ app.use('/pedido', pedidoRouter)
 app.use('/item-pedido', itemPedidoRouter)
 app.use('/entrega', entregaRouter)
 app.use('/endereco', enderecoRouter)
+app.use('/cupom', cupomRouter)
 
 // ============ Inicialização ============
 db.sync()
