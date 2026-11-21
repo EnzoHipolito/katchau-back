@@ -1,4 +1,5 @@
 const { Cupom } = require('../models')
+const { validarCupom, CheckoutError } = require('../services/checkout.service')
 
 class DadosCupomInvalidos extends Error {}
 
@@ -102,4 +103,24 @@ const atualizar = async (req, res) => {
     }
 }
 
-module.exports = { cadastrar, listar, consultar, atualizar }
+// Previa do desconto para o carrinho. O checkout recalcula tudo no servidor.
+const validar = async (req, res) => {
+    const { codigo, subtotal } = req.body || {}
+    if(typeof codigo !== 'string' || !codigo.trim()){
+        return res.status(400).json({message: 'Informe o codigo do cupom.'})
+    }
+    const valorSubtotal = Number(subtotal)
+    if(!Number.isFinite(valorSubtotal) || valorSubtotal < 0){
+        return res.status(400).json({message: 'Subtotal invalido.'})
+    }
+    try{
+        const cupom = await Cupom.findOne({where: {codigo: codigo.trim().toUpperCase()}})
+        const desconto = validarCupom(cupom, valorSubtotal)
+        return res.status(200).json({cupom: {codigo: cupom.codigo, percentual: Number(cupom.percentual)}, desconto})
+    }catch(err){
+        if(err instanceof CheckoutError) return res.status(err.status).json({message: err.message})
+        return responderErro(res, err, 'validar')
+    }
+}
+
+module.exports = { cadastrar, listar, consultar, atualizar, validar }

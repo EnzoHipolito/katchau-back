@@ -319,4 +319,4 @@ const cancelarPedido = async (pedidoId, usuarioId, administrador) => {
     })
 }
 
-module.exports = { CheckoutError, criarCheckout, confirmarPedido, concluirPedido, cancelarPedido }
+module.exports = { validarCupom, CheckoutError, criarCheckout, confirmarPedido, concluirPedido, cancelarPedido }

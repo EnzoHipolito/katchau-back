@@ -15,6 +15,7 @@ const itemPedidoRouter = require('./routes/itensPedido')
 const entregaRouter = require('./routes/entregas')
 const enderecoRouter = require('./routes/enderecos')
 const cupomRouter = require('./routes/cupons')
+const avaliacaoRouter = require('./routes/avaliacoes')
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
@@ -34,6 +35,7 @@ app.use('/item-pedido', itemPedidoRouter)
 app.use('/entrega', entregaRouter)
 app.use('/endereco', enderecoRouter)
 app.use('/cupom', cupomRouter)
+app.use('/avaliacao', avaliacaoRouter)
 
 // ============ Inicialização ============
 db.sync()

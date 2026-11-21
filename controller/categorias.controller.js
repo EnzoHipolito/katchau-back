@@ -29,6 +29,18 @@ const listar = async (req, res) => {
     }
 }
 
+const listarAdmin = async (req, res) => {
+    try{
+        const categorias = await Categoria.findAll({order: [['id', 'ASC']]})
+
+        res.status(200).json({categorias})
+    }
+    catch(err){
+        console.error('Erro ao listar categorias (admin)', err)
+        res.status(500).json({message: 'Falha ao listar categorias.'})
+    }
+}
+
 const consultar = async (req, res) => {
     const id = req.params.id
 
@@ -98,4 +110,4 @@ const atualizarParcial = async (req, res) => {
     await atualizar(req, res)
 }
 
-module.exports = { cadastrar, listar, consultar, apagar, atualizar, atualizarParcial }
+module.exports = { cadastrar, listar, listarAdmin, consultar, apagar, atualizar, atualizarParcial }

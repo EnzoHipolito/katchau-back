@@ -1,3 +1,4 @@
+require('dotenv').config()
 const bcrypt = require('bcrypt')
 
 const SALT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || process.env.SALT_ROUNDS || 12)

@@ -8,6 +8,7 @@ const Estoque = require('./Estoque')
 const Pedido = require('./Pedido')
 const ItemPedido = require('./ItemPedido')
 const Entrega = require('./Entrega')
+const Avaliacao = require('./Avaliacao')
 
 Usuario.hasMany(Endereco, {
     foreignKey: {
@@ -178,6 +179,32 @@ Entrega.belongsTo(Pedido, {
     onUpdate: 'CASCADE'
 })
 
+Produto.hasMany(Avaliacao, {
+    foreignKey: {name: 'produto_id', allowNull: false},
+    as: 'avaliacoes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+Avaliacao.belongsTo(Produto, {
+    foreignKey: {name: 'produto_id', allowNull: false},
+    as: 'produto',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+
+Usuario.hasMany(Avaliacao, {
+    foreignKey: {name: 'usuario_id', allowNull: false},
+    as: 'avaliacoes',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+Avaliacao.belongsTo(Usuario, {
+    foreignKey: {name: 'usuario_id', allowNull: false},
+    as: 'usuario',
+    onDelete: 'CASCADE',
+    onUpdate: 'CASCADE'
+})
+
 module.exports = {
     Usuario,
     Endereco,
@@ -188,5 +215,6 @@ module.exports = {
     Estoque,
     Pedido,
     ItemPedido,
-    Entrega
+    Entrega,
+    Avaliacao
 }

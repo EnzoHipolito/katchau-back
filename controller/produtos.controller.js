@@ -76,15 +76,16 @@ const cadastrar = async (req, res) => {
         if(!categoria || !categoria.ativo){
             return res.status(400).json({message: 'Categoria inexistente ou inativa.'})
         }
-        await db.transaction(async (transaction) => {
+        const produto = await db.transaction(async (transaction) => {
             const produto = await Produto.create(dadosProduto, {transaction})
             await ProdutoImagem.bulkCreate(
                 imagensNormalizadas.map(imagem => ({...imagem, produto_id: produto.id})),
                 {transaction}
             )
+            return produto
         })
 
-        res.status(201).json({message: 'Produto cadastrado com sucesso!'})
+        res.status(201).json({message: 'Produto cadastrado com sucesso!', produto: {id: produto.id, codigo: produto.codigo}})
     }
     catch(err){
         console.error('Erro ao cadastrar produto', err)
@@ -103,6 +104,25 @@ const listar = async (req, res) => {
     }
     catch(err){
         console.error('Erro ao listar produto', err)
+        res.status(500).json({message: 'Falha ao listar produtos.'})
+    }
+}
+
+const listarAdmin = async (req, res) => {
+    try{
+        const produtos = await Produto.findAll({
+            include: [
+                {model: Categoria, as: 'categoria'},
+                {model: Estoque, as: 'estoque'},
+                {model: ProdutoImagem, as: 'imagens', separate: true, order: [['ordem', 'ASC'], ['id', 'ASC']]}
+            ],
+            order: [['id', 'DESC']]
+        })
+
+        res.status(200).json({produtos})
+    }
+    catch(err){
+        console.error('Erro ao listar produtos (admin)', err)
         res.status(500).json({message: 'Falha ao listar produtos.'})
     }
 }
@@ -212,4 +232,4 @@ const atualizarParcial = async (req, res) => {
     await atualizar(req, res)
 }
 
-module.exports = { cadastrar, apagar, atualizar, atualizarParcial, consultar, listar }
+module.exports = { cadastrar, apagar, atualizar, atualizarParcial, consultar, listar, listarAdmin }

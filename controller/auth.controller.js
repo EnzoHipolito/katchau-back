@@ -74,4 +74,17 @@ const register = async (req, res) => {
     }
 }
 
-module.exports = { login, register }
+const me = async (req, res) => {
+    try{
+        const usuario = await Usuario.findByPk(req.user.id, {
+            attributes: ['id', 'nome', 'email', 'cpf', 'perfil', 'createdAt']
+        })
+        if(!usuario) return res.status(404).json({message: 'Usuario nao encontrado.'})
+        return res.status(200).json({usuario})
+    }catch(err){
+        console.error('Erro ao consultar usuario logado', err)
+        return res.status(500).json({message: 'Falha ao consultar usuario.'})
+    }
+}
+
+module.exports = { login, register, me }
